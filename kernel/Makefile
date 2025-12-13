@@ -6,7 +6,7 @@ $(info -- KDIR: $(KDIR))
 $(info -- MDIR: $(MDIR))
 endif
 
-.PHONY: all compdb clean
+.PHONY: all compdb clean format
 
 all:
 	make -C $(KDIR) M=$(MDIR) modules
@@ -14,3 +14,7 @@ compdb:
 	python3 $(MDIR)/.vscode/generate_compdb.py -O $(KDIR) $(MDIR)
 clean:
 	make -C $(KDIR) M=$(MDIR) clean
+format:
+	find . -name "*.c" -o -name "*.h" -print0 | xargs -0 clang-format -i
+
+# Keep a new line here!! Because someone may append config
