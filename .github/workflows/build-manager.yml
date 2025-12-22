@@ -185,7 +185,14 @@ jobs:
         id: commit
         run: |
           echo "SHA=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-          echo "MESSAGE=\"$(git log -1 --pretty=%B)\"" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.head_commit.message }}" ]; then
+            MSG="${{ github.event.head_commit.message }}"
+          else
+            MSG="$(git log -1 --pretty=%B)"
+          fi
+          echo "MESSAGE<<EOF"
+          echo "$MSG"
+          echo "EOF"
           echo "URL=${{ github.server_url }}/${{ github.repository }}/commit/$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Determine manager variant
