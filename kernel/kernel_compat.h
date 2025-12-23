@@ -103,4 +103,9 @@ static inline struct task_security_struct *selinux_cred(const struct cred *cred)
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+extern void *ksu_compat_kvrealloc(const void *p, size_t oldsize, size_t newsize,
+                                  gfp_t flags);
+#endif
+
 #endif

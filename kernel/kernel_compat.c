@@ -6,6 +6,10 @@
 #include <linux/sched.h>
 #endif
 #include <linux/uaccess.h>
+#include <linux/mm.h>
+#include <linux/slab.h>
+#include <linux/vmalloc.h>
+
 #include "klog.h" // IWYU pragma: keep
 #include "kernel_compat.h"
 
@@ -146,5 +150,47 @@ int path_mount(const char *dev_name, struct path *path, const char *type_page,
                    data_page);
     set_fs(old_fs);
     return ret;
+}
+#endif
+
+static void *__kvmalloc(size_t size, gfp_t flags)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+    // https://elixir.bootlin.com/linux/v4.4.302/source/security/apparmor/lib.c#L79
+    void *buffer = NULL;
+
+    if (size == 0)
+        return NULL;
+
+    /* do not attempt kmalloc if we need more than 16 pages at once */
+    if (size <= (16 * PAGE_SIZE))
+        buffer = kmalloc(size, flags | GFP_NOIO | __GFP_NOWARN);
+    if (!buffer) {
+        if (flags & __GFP_ZERO)
+            buffer = vzalloc(size);
+        else
+            buffer = vmalloc(size);
+    }
+    return buffer;
+#else
+    return kvmalloc(size, flags);
+#endif
+}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+// https://elixir.bootlin.com/linux/v5.10.247/source/mm/util.c#L664
+void *ksu_compat_kvrealloc(const void *p, size_t oldsize, size_t newsize,
+                           gfp_t flags)
+{
+    void *newp;
+
+    if (oldsize >= newsize)
+        return (void *)p;
+    newp = __kvmalloc(newsize, flags);
+    if (!newp)
+        return NULL;
+    memcpy(newp, p, oldsize);
+    kvfree(p);
+    return newp;
 }
 #endif
