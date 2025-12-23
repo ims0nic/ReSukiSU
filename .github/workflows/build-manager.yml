@@ -150,7 +150,7 @@ jobs:
           cp -f ../armv7-linux-androideabi/release/ksud ../manager/app/src/main/jniLibs/armeabi-v7a/libksud.so
 
       - name: Build APK
-        run: ./gradlew assemble${{ matrix.build_type }} -Pcommit=${{ steps.commit.outputs.COMMIT_SHA }}
+        run: ./gradlew assemble${{ matrix.build_type }} -Pcommit=${{ steps.commit.outputs.COMMIT_SHA }} --configuration-cache
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
